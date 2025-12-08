@@ -1,0 +1,44 @@
+{
+  "name": "sf-email-deliverability-automation",
+  "version": "1.0.0",
+  "description": "CLI tool to automate Salesforce email deliverability settings",
+  "main": "enable-email-deliverability.js",
+  "bin": {
+    "sf-email-deliverability": "./enable-email-deliverability.js"
+  },
+  "files": [
+    "enable-email-deliverability.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node enable-email-deliverability.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "node -e \"console.log('Ready to publish')\""
+  },
+  "keywords": [
+    "salesforce",
+    "automation",
+    "playwright",
+    "devops",
+    "email-deliverability",
+    "cli"
+  ],
+  "author": "Jose Naranjo",
+  "license": "ISC",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jnaranj09/sf-email-deliverability-automation.git"
+  },
+  "homepage": "https://github.com/jnaranj09/sf-email-deliverability-automation#readme",
+  "bugs": {
+    "url": "https://github.com/jnaranj09/sf-email-deliverability-automation/issues"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "commander": "^11.0.0"
+  }
+}

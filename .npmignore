@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Development configuration
+.bmad/
+.claude/
+.vscode/
+.idea/
+
+# Documentation (README included via files field)
+docs/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files (when added)
+*.test.js
+*.spec.js
+__tests__/
+coverage/
+
+# Lock files (consumers will generate their own)
+package-lock.json
