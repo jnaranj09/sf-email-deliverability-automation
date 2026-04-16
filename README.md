@@ -1,6 +1,6 @@
 # Salesforce Email Deliverability Automation
 
-A Node.js CLI tool that automates changing email deliverability settings to "All email" in Salesforce sandboxes using Playwright.
+A Node.js CLI tool that automates changing email deliverability settings to "All email" in Salesforce sandboxes using Playwright. It also ensures the "Use a substitute email address for unverified domains" SPF checkbox is checked before saving.
 
 ## Problem
 
@@ -115,6 +115,9 @@ The script provides detailed logging throughout execution:
 [SUCCESS] Email deliverability page loaded successfully
 [INFO] Changing email deliverability setting to "All email"...
 [SUCCESS] Deliverability setting changed to "All email"
+[INFO] SPF substitute-domain checkbox already checked
+# or, on a sandbox where the checkbox was off at start:
+# [INFO] SPF substitute-domain checkbox was unchecked — checking it now
 [INFO] Saving configuration...
 [INFO] Save button clicked, waiting for confirmation...
 [SUCCESS] Configuration saved successfully!
@@ -199,6 +202,7 @@ npx playwright install chromium
 
 4. **Stable Element Selectors:** Uses Salesforce's stable HTML element IDs inside the iframe
    - Dropdown: `#thePage:theForm:editBlock:sendEmailAccessControlSection:sendEmailAccessControl:sendEmailAccessControlSelect`
+   - SPF substitute-domain checkbox: `#thePage:theForm:editBlock:spfSection:substituteEmailDomain:cbSubstituteEmailDomain`
    - Save button: `#thePage:theForm:editBlock:buttons:saveBtn`
    - Success message: `#thePage:theForm:successMessagePanel`
 

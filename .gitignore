@@ -23,5 +23,7 @@ npm-debug.log*
 
 # Development tooling
 .bmad/
+_bmad/
+_bmad-output/
 .claude/
 docs/

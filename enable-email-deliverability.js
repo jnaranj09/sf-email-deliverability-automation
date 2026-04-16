@@ -115,6 +115,9 @@ async function enableEmailDeliverability() {
     // Frame locator for the Salesforce Classic iframe embedded in Lightning
     const deliverabilityFrame = page.frameLocator('iframe[title*="Deliverability"]');
     const dropdownSelector = '#thePage\\:theForm\\:editBlock\\:sendEmailAccessControlSection\\:sendEmailAccessControl\\:sendEmailAccessControlSelect';
+    const substituteDomainCheckboxSelector = '#thePage\\:theForm\\:editBlock\\:spfSection\\:substituteEmailDomain\\:cbSubstituteEmailDomain';
+    const saveButtonSelector = '#thePage\\:theForm\\:editBlock\\:buttons\\:saveBtn';
+    const successMessageSelector = '#thePage\\:theForm\\:successMessagePanel';
 
     // Wait for the deliverability dropdown inside the iframe
     await deliverabilityFrame.locator(dropdownSelector).waitFor({ state: 'visible' });
@@ -126,16 +129,23 @@ async function enableEmailDeliverability() {
 
     log.success('Deliverability setting changed to "All email"');
 
+    const substituteDomainCheckbox = deliverabilityFrame.locator(substituteDomainCheckboxSelector);
+    await substituteDomainCheckbox.waitFor({ state: 'visible' });
+    if (await substituteDomainCheckbox.isChecked()) {
+      log.info('SPF substitute-domain checkbox already checked');
+    } else {
+      log.info('SPF substitute-domain checkbox was unchecked — checking it now');
+      await substituteDomainCheckbox.check();
+    }
+
     // Task 6: Save configuration and verify success
     log.info('Saving configuration...');
 
-    const saveButtonSelector = '#thePage\\:theForm\\:editBlock\\:buttons\\:saveBtn';
     await deliverabilityFrame.locator(saveButtonSelector).click();
 
     log.info('Save button clicked, waiting for confirmation...');
 
     // Wait for success message panel to appear (locale-independent check)
-    const successMessageSelector = '#thePage\\:theForm\\:successMessagePanel';
     await deliverabilityFrame.locator(successMessageSelector).waitFor({ state: 'visible' });
 
     const endTime = Date.now();
