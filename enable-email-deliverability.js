@@ -13,12 +13,18 @@ const EMAIL_DELIVERABILITY = {
 const DEFAULT_TIMEOUT_MS = 60000;
 const DEFAULT_RETRIES = 5;
 
+const DOMAIN_FILTER_IFRAME_TITLE = 'Email Domain Filter';
+const DOMAIN_FILTER_ROW_SELECTOR = 'table.list tr.dataRow';
+const DOMAIN_FILTER_DELETE_LINK_SELECTOR = 'a.actionLink[title^="Delete"]';
+const DOMAIN_FILTER_PURGE_MAX_ITERATIONS = 50;
+
 // Configure CLI
 program
   .name('enable-email-deliverability')
   .description('Automate Salesforce email deliverability settings')
   .requiredOption('--sandbox-url <url>', 'Authenticated Salesforce sandbox URL')
   .option('--headed', 'Run browser in headed mode (for debugging)', false)
+  .option('--purge-domain-filters', 'Delete all Email Domain Filter rows after the deliverability save (destructive, opt-in)', false)
   .option('--timeout <ms>', 'Timeout in milliseconds for page operations', parseInt, DEFAULT_TIMEOUT_MS)
   .option('--retries <count>', 'Number of retry attempts on failure', parseInt, DEFAULT_RETRIES)
   .helpOption('-h, --help', 'Display help information')
@@ -43,10 +49,10 @@ function redactUrl(urlString) {
   }
 }
 
-// Build deliverability page URL with proper query param handling
-function buildDeliverabilityUrl(sandboxUrl) {
+// Build a Salesforce setup URL by appending a `retURL` param to the authenticated frontdoor.jsp URL
+function buildSetupUrl(sandboxUrl, setupPath) {
   const url = new URL(sandboxUrl);
-  url.searchParams.set('retURL', '/lightning/setup/OrgEmailSettings/home');
+  url.searchParams.set('retURL', setupPath);
   return url.toString();
 }
 
@@ -67,6 +73,75 @@ async function withRetry(fn, retries, delayMs = 1000) {
     }
   }
   throw lastError;
+}
+
+// Purge all Email Domain Filter rows. Registers a page-level dialog handler (accepts the native `confirm()` on Del),
+// then clicks the first row's delete link, waits for the list to reload with a lower count, repeats until empty.
+async function purgeEmailDomainFilters(page) {
+  log.info('Navigating to Email Domain Filter page for purge...');
+
+  const url = buildSetupUrl(options.sandboxUrl, '/lightning/setup/EmailDomainFilter/home');
+
+  await withRetry(async () => {
+    await page.goto(url);
+    await page.waitForURL('**/lightning/setup/EmailDomainFilter/home');
+    await page.locator(`iframe[title*="${DOMAIN_FILTER_IFRAME_TITLE}"]`).waitFor({ state: 'attached' });
+  }, options.retries);
+
+  log.success('Email Domain Filter page loaded');
+
+  const frame = page.frameLocator(`iframe[title*="${DOMAIN_FILTER_IFRAME_TITLE}"]`);
+  await frame.locator('table.list').waitFor({ state: 'attached' });
+
+  const rowLocator = frame.locator(DOMAIN_FILTER_ROW_SELECTOR);
+  const initialCount = await rowLocator.count();
+
+  if (initialCount === 0) {
+    log.info('Email Domain Filter list is empty — nothing to delete');
+    return 0;
+  }
+
+  log.info(`Found ${initialCount} Email Domain Filter row(s) to purge`);
+
+  const dialogHandler = (dialog) => { dialog.accept().catch(() => {}); };
+  page.on('dialog', dialogHandler);
+
+  let deleted = 0;
+  try {
+    for (let iteration = 0; iteration < DOMAIN_FILTER_PURGE_MAX_ITERATIONS; iteration++) {
+      const before = await rowLocator.count();
+      if (before === 0) break;
+
+      log.info(`Deleting row ${deleted + 1} of ${initialCount} (${before} remaining)...`);
+      await frame.locator(DOMAIN_FILTER_DELETE_LINK_SELECTOR).first().click();
+
+      // Delete navigates through deleteredirect.jsp then back to the list page (inside the iframe).
+      // Main-page URL doesn't change — we wait for the row count to settle at exactly before-1,
+      // not merely "less than", to tolerate transient 0-reads during iframe detach/re-attach.
+      const target = before - 1;
+      const deadline = Date.now() + options.timeout;
+      let after = before;
+      while (Date.now() < deadline) {
+        try { after = await rowLocator.count(); } catch { after = before; }
+        if (after === target) break;
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      if (after !== target) {
+        throw new Error(`Row count did not settle at ${target} after delete click (was ${before}, last observed ${after}); deleted ${deleted} row(s) so far`);
+      }
+      deleted++;
+    }
+
+    const finalCount = await rowLocator.count();
+    if (finalCount > 0) {
+      throw new Error(`Email Domain Filter purge exceeded safety cap of ${DOMAIN_FILTER_PURGE_MAX_ITERATIONS} iterations; deleted ${deleted} row(s), ${finalCount} still remain`);
+    }
+
+    log.success(`Deleted ${deleted} Email Domain Filter row(s)`);
+    return deleted;
+  } finally {
+    page.off('dialog', dialogHandler);
+  }
 }
 
 // Main automation function
@@ -98,7 +173,7 @@ async function enableEmailDeliverability() {
 
     // Task 4: Navigate directly to email deliverability page
     log.info('Navigating to email deliverability settings...');
-    const deliverabilityUrl = buildDeliverabilityUrl(options.sandboxUrl);
+    const deliverabilityUrl = buildSetupUrl(options.sandboxUrl, '/lightning/setup/OrgEmailSettings/home');
 
     await withRetry(async () => {
       await page.goto(deliverabilityUrl);
@@ -148,10 +223,16 @@ async function enableEmailDeliverability() {
     // Wait for success message panel to appear (locale-independent check)
     await deliverabilityFrame.locator(successMessageSelector).waitFor({ state: 'visible' });
 
+    log.success('Configuration saved successfully!');
+
+    if (options.purgeDomainFilters) {
+      await purgeEmailDomainFilters(page);
+    } else {
+      log.info('Email Domain Filter purge skipped (--purge-domain-filters not set)');
+    }
+
     const endTime = Date.now();
     const executionTime = ((endTime - startTime) / 1000).toFixed(2);
-
-    log.success('Configuration saved successfully!');
     log.success(`Total execution time: ${executionTime} seconds`);
     log.success(`Timestamp: ${new Date().toISOString()}`);
 

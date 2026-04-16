@@ -88,15 +88,29 @@ sf-email-deliverability --help
 |-----------|----------|---------|-------------|
 | `--sandbox-url <url>` | Yes | - | Authenticated Salesforce sandbox URL (frontdoor.jsp format) |
 | `--headed` | No | `false` | Run browser in headed mode for visual debugging |
+| `--purge-domain-filters` | No | `false` | **Destructive.** After the deliverability save, delete every row on Setup → Email Domain Filter. See [Destructive actions](#destructive-actions). |
 | `--timeout <ms>` | No | `60000` | Timeout in milliseconds for page operations |
 | `--retries <count>` | No | `5` | Number of retry attempts on failure |
 | `-h, --help` | No | - | Display help information |
+
+## Destructive actions
+
+The `--purge-domain-filters` flag is opt-in because it **deletes every row** on Setup → Email Domain Filter for the target sandbox. Fresh Salesforce sandboxes typically ship with a default SendGrid catch-all filter pre-provisioned; use this flag when you want that (and anything else on the list) removed as part of sandbox setup.
+
+- The flag is a no-op if the list is already empty.
+- The native browser "Are you sure?" confirm is auto-accepted — do not set this flag on an org whose filter rows you intend to keep.
+- A safety cap of 50 delete iterations aborts the script with a clear error if the row count stops decreasing (protection against a runaway loop if Salesforce changes the page).
 
 ## Example
 
 ```bash
 sf-email-deliverability \
   --sandbox-url "https://mycompany--dev1.sandbox.my.salesforce.com/secur/frontdoor.jsp?sid=00D..."
+
+# Fresh-sandbox setup: flip deliverability AND purge pre-provisioned domain filters
+sf-email-deliverability \
+  --sandbox-url "https://mycompany--dev1.sandbox.my.salesforce.com/secur/frontdoor.jsp?sid=00D..." \
+  --purge-domain-filters
 ```
 
 ## Output
@@ -121,6 +135,13 @@ The script provides detailed logging throughout execution:
 [INFO] Saving configuration...
 [INFO] Save button clicked, waiting for confirmation...
 [SUCCESS] Configuration saved successfully!
+[INFO] Email Domain Filter purge skipped (--purge-domain-filters not set)
+# With --purge-domain-filters, the block above is replaced by:
+# [INFO] Navigating to Email Domain Filter page for purge...
+# [SUCCESS] Email Domain Filter page loaded
+# [INFO] Found 1 Email Domain Filter row(s) to purge
+# [INFO] Deleting row 1 of 1 (1 remaining)...
+# [SUCCESS] Deleted 1 Email Domain Filter row(s)
 [SUCCESS] Success message: "Your organization's email settings have been saved."
 [SUCCESS] Total execution time: 6.42 seconds
 [SUCCESS] Timestamp: 2025-12-04T12:35:03.211Z
