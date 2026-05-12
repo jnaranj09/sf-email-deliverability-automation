@@ -91,6 +91,7 @@ sf-email-deliverability --help
 | `--purge-domain-filters` | No | `false` | **Destructive.** After the deliverability save, delete every row on Setup → Email Domain Filter. See [Destructive actions](#destructive-actions). |
 | `--timeout <ms>` | No | `60000` | Timeout in milliseconds for page operations |
 | `--retries <count>` | No | `5` | Number of retry attempts on failure |
+| `-V, --version` | No | - | Print the installed version and exit |
 | `-h, --help` | No | - | Display help information |
 
 ## Destructive actions

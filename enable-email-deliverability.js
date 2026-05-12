@@ -2,6 +2,7 @@
 
 const { chromium } = require('playwright');
 const { program } = require('commander');
+const { version: pkgVersion } = require('./package.json');
 
 // Constants for Salesforce email deliverability dropdown values
 const EMAIL_DELIVERABILITY = {
@@ -22,6 +23,7 @@ const DOMAIN_FILTER_PURGE_MAX_ITERATIONS = 50;
 program
   .name('enable-email-deliverability')
   .description('Automate Salesforce email deliverability settings')
+  .version(pkgVersion, '-V, --version', 'Display the installed version')
   .requiredOption('--sandbox-url <url>', 'Authenticated Salesforce sandbox URL')
   .option('--headed', 'Run browser in headed mode (for debugging)', false)
   .option('--purge-domain-filters', 'Delete all Email Domain Filter rows after the deliverability save (destructive, opt-in)', false)
