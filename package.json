@@ -1,6 +1,6 @@
 {
   "name": "sf-email-deliverability-automation",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "CLI tool to automate Salesforce email deliverability settings",
   "main": "enable-email-deliverability.js",
   "bin": {
@@ -14,6 +14,7 @@
   "scripts": {
     "start": "node enable-email-deliverability.js",
     "test": "echo \"No tests configured\" && exit 0",
+    "postinstall": "playwright install chromium",
     "prepublishOnly": "node -e \"console.log('Ready to publish')\""
   },
   "keywords": [

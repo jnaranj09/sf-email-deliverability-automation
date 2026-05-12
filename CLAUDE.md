@@ -9,8 +9,9 @@ Single-file Node.js CLI that uses Playwright (Chromium) to flip a Salesforce san
 ## Common commands
 
 ```bash
-npm install
-npx playwright install chromium         # required once before first run
+npm install                              # auto-runs `playwright install chromium` via postinstall
+# Fallback if postinstall was skipped (e.g. --ignore-scripts):
+# npx playwright install chromium
 
 # Run locally (headless)
 node enable-email-deliverability.js --sandbox-url "<frontdoor.jsp URL>"

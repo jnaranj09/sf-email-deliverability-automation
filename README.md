@@ -23,11 +23,7 @@ This script automates the entire process - navigate to settings, change the conf
 npm install -g sf-email-deliverability-automation
 ```
 
-Then install Playwright browsers:
-
-```bash
-npx playwright install chromium
-```
+The Chromium browser is downloaded automatically via a `postinstall` hook. If you installed with `--ignore-scripts` (or the postinstall was interrupted), run `npx playwright install chromium` manually.
 
 ### Option 2: Install from source
 
@@ -38,16 +34,10 @@ git clone https://github.com/jnaranj09/sf-email-deliverability-automation.git
 cd sf-email-deliverability-automation
 ```
 
-2. Install dependencies:
+2. Install dependencies (Chromium is downloaded automatically by the `postinstall` hook):
 
 ```bash
 npm install
-```
-
-3. Install Playwright browsers:
-
-```bash
-npx playwright install chromium
 ```
 
 ## Usage
