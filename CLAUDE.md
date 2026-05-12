@@ -34,10 +34,10 @@ Everything lives in `enable-email-deliverability.js` (~275 lines). Key design ch
 
 3. **Stable Visualforce IDs are the contract.** The code targets four IDs inside the iframe, with colons escaped for CSS selectors:
    - dropdown: `#thePage:theForm:editBlock:sendEmailAccessControlSection:sendEmailAccessControl:sendEmailAccessControlSelect`
-   - SPF substitute-domain checkbox: `#thePage:theForm:editBlock:spfSection:substituteEmailDomain:cbSubstituteEmailDomain`
+   - Substitute email domain checkbox (under "Email Domain Verification" section): `#thePage:theForm:editBlock:domainAuthSection:substituteEmailDomain:cbSubstituteEmailDomain`
    - save: `#thePage:theForm:editBlock:buttons:saveBtn`
    - success panel: `#thePage:theForm:successMessagePanel`
-   Dropdown value `'2'` means "All email" (`EMAIL_DELIVERABILITY.ALL_EMAIL`). The SPF checkbox must be `:checked` at Save time — the script reads `isChecked()` and calls `check()` only when needed so CI logs show whether a run enforced the setting or merely confirmed it. Both changes commit under one Save. Success is detected by the panel becoming visible — do not switch to a text match, that would break across locales.
+   Dropdown value `'2'` means "All email" (`EMAIL_DELIVERABILITY.ALL_EMAIL`). The substitute-domain checkbox must be `:checked` at Save time — the script reads `isChecked()` and calls `check()` only when needed so CI logs show whether a run enforced the setting or merely confirmed it. Both changes commit under one Save. Success is detected by the panel becoming visible — do not switch to a text match, that would break across locales.
 
 4. **`withRetry` wraps nav+iframe-attach only**, never individual clicks, and never the purge loop. Retries use exponential backoff starting at 1s. Default is 5 retries, so worst case ~31s of backoff on top of the per-attempt timeout. Both target pages go through `withRetry` for their nav+iframe-attach step.
 
@@ -53,3 +53,11 @@ Everything lives in `enable-email-deliverability.js` (~275 lines). Key design ch
 ## When Salesforce breaks this
 
 If the script starts failing after a Salesforce release, the likely culprits in order are: (a) iframe title changed, (b) Visualforce IDs changed, (c) the `retURL` path changed. Run with `--headed` to see which step hangs, then update selectors in `enable-email-deliverability.js` — there is no abstraction layer to update elsewhere.
+
+## Known selector drifts (read before patching IDs)
+
+Whenever a Visualforce ID selector breaks, before swapping in a new literal, read `features/*/incident.md` for prior drift history and the recommended smarter selector strategy. Current known incidents:
+
+- `features/substitute-email-locator-bug/incident.md` — 2026-05-12: SF renamed the section `spfSection` → `domainAuthSection`. Captured DOM in the same folder. The note also proposes switching the four hard-coded IDs to `[id$="...stable-tail..."]` suffix matchers if drift happens again.
+
+When a new drift is fixed, append a new `features/<short-bug-slug>/incident.md` (with captured HTML next to it) and add a one-line entry above. The goal: the next time Salesforce renames anything, the assistant sees this list, reads the relevant `incident.md`, and considers the smarter-selector path instead of just patching the literal.

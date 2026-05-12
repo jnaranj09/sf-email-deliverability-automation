@@ -190,7 +190,7 @@ async function enableEmailDeliverability() {
     // Frame locator for the Salesforce Classic iframe embedded in Lightning
     const deliverabilityFrame = page.frameLocator('iframe[title*="Deliverability"]');
     const dropdownSelector = '#thePage\\:theForm\\:editBlock\\:sendEmailAccessControlSection\\:sendEmailAccessControl\\:sendEmailAccessControlSelect';
-    const substituteDomainCheckboxSelector = '#thePage\\:theForm\\:editBlock\\:spfSection\\:substituteEmailDomain\\:cbSubstituteEmailDomain';
+    const substituteDomainCheckboxSelector = '#thePage\\:theForm\\:editBlock\\:domainAuthSection\\:substituteEmailDomain\\:cbSubstituteEmailDomain';
     const saveButtonSelector = '#thePage\\:theForm\\:editBlock\\:buttons\\:saveBtn';
     const successMessageSelector = '#thePage\\:theForm\\:successMessagePanel';
 
@@ -207,9 +207,9 @@ async function enableEmailDeliverability() {
     const substituteDomainCheckbox = deliverabilityFrame.locator(substituteDomainCheckboxSelector);
     await substituteDomainCheckbox.waitFor({ state: 'visible' });
     if (await substituteDomainCheckbox.isChecked()) {
-      log.info('SPF substitute-domain checkbox already checked');
+      log.info('Substitute email domain checkbox already checked');
     } else {
-      log.info('SPF substitute-domain checkbox was unchecked — checking it now');
+      log.info('Substitute email domain checkbox was unchecked — checking it now');
       await substituteDomainCheckbox.check();
     }
 
